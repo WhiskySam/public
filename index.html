@@ -426,7 +426,9 @@
             color: #2D3748;
             font-weight: 500;
         }
-        .contact-form input, .contact-form textarea {
+        .contact-form input,
+        .contact-form textarea,
+        .contact-form select {
             width: 100%;
             max-width: 800px;
             padding: 0.8rem;
@@ -435,10 +437,6 @@
             border: 1px solid #E2E8F0;
             border-radius: 8px;
             font-size: 1rem;
-        }
-        .contact-form input[readonly] {
-            background: #E2E8F0;
-            cursor: not-allowed;
         }
         .contact-form button {
             background: #F6AD55;
@@ -608,7 +606,7 @@
             .contact-form-heading {
                 font-size: 1.5rem;
             }
-            .contact-form input, .contact-form textarea {
+            .contact-form input, .contact-form textarea, .contact-form select {
                 max-width: 100%;
             }
         }
@@ -1009,8 +1007,13 @@
                     <input type="tel" id="mobile" name="mobile" placeholder="Mobile* (10-digit)" pattern="[6-9][0-9]{9}" title="Enter a valid 10-digit Indian mobile number" aria-label="10-digit Indian mobile number" aria-required="true" required>
                     <label for="email">Email*</label>
                     <input type="email" id="email" name="email" placeholder="Enter Email*" aria-required="true" required>
-                    <label for="selected_plan">Selected Plan</label>
-                    <input type="text" id="selected_plan" name="selected_plan" readonly aria-label="Selected pricing plan">
+                    <label for="selected_plan">Select a Plan</label>
+                    <select id="selected_plan" name="selected_plan" aria-label="Select a pricing plan">
+                        <option value="None">None</option>
+                        <option value="Basic (₹10,000/yr)">Basic (₹10,000/yr)</option>
+                        <option value="Standard (₹20,000/yr)">Standard (₹20,000/yr)</option>
+                        <option value="Premium (₹50,000/yr)">Premium (₹50,000/yr)</option>
+                    </select>
                     <label for="school_name">School Name</label>
                     <input type="text" id="school_name" name="school_name" placeholder="School Name">
                     <label for="address">Address</label>
@@ -1366,8 +1369,9 @@
             const plan = params.get('plan');
             const price = params.get('price');
             if (plan && price) {
-                const selectedPlanInput = document.getElementById('selected_plan');
-                selectedPlanInput.value = `${plan} (₹${price}/yr)`;
+                const selectedPlanSelect = document.getElementById('selected_plan');
+                const planValue = `${plan} (₹${price}/yr)`;
+                selectedPlanSelect.value = planValue;
                 
                 // Expand the contact form
                 const contactFormHeader = document.getElementById('contact-form-header');
