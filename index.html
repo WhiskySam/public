@@ -1,0 +1,1401 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SmartSchool: Affordable school management software for Indian schools with intuitive infographics.">
+    <meta name="keywords" content="school management software, India, education, SmartSchool">
+    <title>SmartSchool - Simplify School Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        body {
+            line-height: 1.6;
+            color: #2D3748;
+            background: #F7FAFC;
+            overflow-x: hidden;
+        }
+        header {
+            background: #1A4971;
+            color: #FFFFFF;
+            padding: 1.2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo h1 {
+            font-size: 1.8rem;
+            color: #F6AD55;
+            font-weight: 700;
+        }
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 2rem;
+        }
+        nav a {
+            color: #FFFFFF;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        nav a:hover {
+            color: #F6AD55;
+        }
+        .hamburger {
+            display: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #F6AD55;
+        }
+        .hero {
+            background: linear-gradient(rgba(26,73,113,0.85), rgba(26,73,113,0.85)), url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover;
+            text-align: center;
+            padding: 6rem 1rem;
+            color: #FFFFFF;
+        }
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2.5rem;
+        }
+        .cta-button {
+            background: #F6AD55;
+            color: #1A4971;
+            padding: 0.9rem 2.5rem;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: transform 0.3s, background 0.3s;
+        }
+        .cta-button:hover {
+            background: #ED8936;
+            transform: scale(1.05);
+        }
+        .floating-cta {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+            animation: pulse 2s infinite;
+        }
+        .whatsapp-cta {
+            position: fixed;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        .whatsapp-cta.collapsed {
+            width: 60px;
+            height: 60px;
+            background: #25D366;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .whatsapp-cta.expanded {
+            background: #FFFFFF;
+            padding: 1rem;
+            border-radius: 8px 0 0 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            width: 200px;
+            text-align: center;
+        }
+        .whatsapp-cta.collapsed .whatsapp-icon {
+            width: 40px;
+            cursor: pointer;
+        }
+        .whatsapp-cta.expanded .whatsapp-icon {
+            width: 40px;
+            margin-bottom: 0.5rem;
+        }
+        .whatsapp-cta .whatsapp-content {
+            display: none;
+        }
+        .whatsapp-cta.expanded .whatsapp-content {
+            display: block;
+        }
+        .whatsapp-cta p {
+            color: #2D3748;
+            font-size: 0.9rem;
+            margin: 0.3rem 0;
+        }
+        .whatsapp-cta a {
+            text-decoration: none;
+            color: #25D366;
+            font-weight: 600;
+        }
+        .whatsapp-cta a:hover {
+            color: #128C7E;
+        }
+        .whatsapp-cta .chat-button {
+            display: inline-block;
+            background: #25D366;
+            color: #FFFFFF;
+            padding: 0.6rem 1.2rem;
+            margin-top: 0.8rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background 0.3s, transform 0.3s;
+        }
+        .whatsapp-cta .chat-button:hover {
+            background: #128C7E;
+            transform: scale(1.05);
+        }
+        .whatsapp-cta:hover {
+            transform: translateY(-50%) translateX(-5px);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        @keyframes pulse-form {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        section {
+            padding: 4rem 1rem;
+            max-width: 1280px;
+            margin: 0 auto;
+            animation: fadeIn 0.8s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1, h2, h3 {
+            color: #1A4971;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .feature-card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .feature-card img {
+            width: 70px;
+            margin-bottom: 1.5rem;
+        }
+        .infographic-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 2.5rem;
+            margin-top: 3rem;
+            text-align: center;
+        }
+        .infographic-item img {
+            width: 90px;
+            margin-bottom: 1.5rem;
+        }
+        .infographic-item p {
+            font-size: 1rem;
+            color: #4A5568;
+        }
+        .tabs {
+            display: flex;
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .tab {
+            background: #E2E8F0;
+            padding: 0.7rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            color: #1A4971;
+            font-weight: 500;
+            transition: background 0.3s, color 0.3s;
+        }
+        .tab.active, .tab:hover {
+            background: #F6AD55;
+            color: #FFFFFF;
+        }
+        .accordion {
+            margin-top: 1.5rem;
+        }
+        .accordion-item {
+            margin-bottom: 1.2rem;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #FFFFFF;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .accordion-header {
+            background: #F7FAFC;
+            padding: 1.2rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: #1A4971;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s, color 0.3s;
+        }
+        .accordion-header:hover {
+            background: #F6AD55;
+            color: #FFFFFF;
+        }
+        .accordion-header::after {
+            content: '➕';
+            color: #F6AD55;
+            font-size: 1.2rem;
+        }
+        .accordion-header.active::after {
+            content: '➖';
+        }
+        .accordion-content {
+            display: none;
+            padding: 1.5rem;
+            background: #FFFFFF;
+            animation: slideDown 0.4s ease;
+        }
+        .accordion-content.active {
+            display: block;
+        }
+        @keyframes slideDown {
+            from { height: 0; opacity: 0; }
+            to { height: auto; opacity: 1; }
+        }
+        .accordion-content img {
+            width: 60px;
+            float: left;
+            margin-right: 1.5rem;
+        }
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 3rem;
+            background: #FFFFFF;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+        .pricing-table th, .pricing-table td {
+            border: 1px solid #E2E8F0;
+            padding: 1rem;
+            text-align: center;
+        }
+        .pricing-table th {
+            background: #1A4971;
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+        .pricing-table .popular {
+            background: #F6AD55;
+            color: #1A4971;
+            font-weight: 600;
+        }
+        .pricing-table img {
+            width: 24px;
+            vertical-align: middle;
+        }
+        .testimonials {
+            background: #E6FFFA;
+            padding: 4rem 1rem;
+            text-align: center;
+        }
+        .testimonial-slider {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .testimonial-card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .testimonial-card.active {
+            display: block;
+        }
+        .testimonial-card img {
+            width: 50px;
+            margin-bottom: 1.5rem;
+        }
+        .contact-form {
+            width: 100%;
+            margin: 3rem auto;
+            background: #E6FFFA;
+            border: 2px solid #F6AD55;
+            border-radius: 12px;
+            padding: 2rem;
+        }
+        .contact-form-heading {
+            font-size: 2rem;
+            color: #1A4971;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+        }
+        .contact-form .accordion-header {
+            position: relative;
+            padding-left: 3rem;
+        }
+        .contact-form .accordion-header::before {
+            content: '';
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background: url('https://cdn-icons-png.flaticon.com/512/149/149217.png') no-repeat center;
+            background-size: contain;
+        }
+        .contact-form label {
+            display: block;
+            margin-bottom: 0.3rem;
+            color: #2D3748;
+            font-weight: 500;
+        }
+        .contact-form input, .contact-form textarea {
+            width: 100%;
+            max-width: 800px;
+            padding: 0.8rem;
+            margin: 0 auto 1.2rem auto;
+            display: block;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .contact-form input[readonly] {
+            background: #E2E8F0;
+            cursor: not-allowed;
+        }
+        .contact-form button {
+            background: #F6AD55;
+            color: #1A4971;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+            display: block;
+            margin: 0 auto;
+        }
+        .contact-form button:hover {
+            background: #ED8936;
+        }
+        .error-message {
+            color: #B91C1C;
+            font-size: 0.9rem;
+            margin-top: -0.8rem;
+            margin-bottom: 1rem;
+            display: none;
+            text-align: center;
+        }
+        .error-message.active {
+            display: block;
+        }
+        footer {
+            background: #1A4971;
+            color: #FFFFFF;
+            padding: 3rem 1rem;
+        }
+        .footer-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+        .footer-content h3 {
+            color: #F6AD55;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        .footer-content a {
+            color: #E2E8F0;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 0.6rem;
+            font-size: 0.95rem;
+        }
+        .footer-content a:hover {
+            color: #F6AD55;
+        }
+        .social-icons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.6rem;
+        }
+        .social-icons a {
+            font-size: 1.5rem;
+            color: #E2E8F0;
+        }
+        .social-icons a:hover {
+            color: #F6AD55;
+        }
+        .social-icons img {
+            width: 24px;
+            vertical-align: middle;
+        }
+        .coupon-form form {
+            display: flex;
+            gap: 1rem;
+        }
+        .coupon-form input {
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: none;
+            width: 200px;
+            font-size: 0.95rem;
+        }
+        .coupon-form button {
+            background: #F6AD55;
+            color: #1A4971;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .coupon-form button:hover {
+            background: #ED8936;
+        }
+        .coupon-result {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #E6FFFA;
+            border-radius: 8px;
+            color: #1A4971;
+            font-size: 0.95rem;
+            display: none;
+        }
+        .coupon-result.active {
+            display: block;
+        }
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+            .hero p {
+                font-size: 1.1rem;
+            }
+            .hero {
+                padding: 4rem 1rem;
+            }
+            nav ul {
+                display: none;
+                flex-direction: column;
+                background: #1A4971;
+                position: absolute;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                padding: 1.5rem;
+            }
+            nav ul.active {
+                display: flex;
+            }
+            .hamburger {
+                display: block;
+            }
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+            .coupon-form form {
+                flex-direction: column;
+            }
+            .coupon-form input {
+                width: 100%;
+            }
+            .features-grid, .infographic-section {
+                grid-template-columns: 1fr;
+            }
+            .whatsapp-cta.collapsed {
+                width: 50px;
+                height: 50px;
+            }
+            .whatsapp-cta.collapsed .whatsapp-icon {
+                width: 30px;
+            }
+            .whatsapp-cta.expanded {
+                width: 180px;
+                padding: 0.8rem;
+            }
+            .whatsapp-cta.expanded .whatsapp-icon {
+                width: 30px;
+            }
+            .whatsapp-cta p {
+                font-size: 0.8rem;
+            }
+            .whatsapp-cta .chat-button {
+                padding: 0.5rem 1rem;
+                font-size: 0.8rem;
+            }
+            .contact-form {
+                padding: 1.5rem;
+            }
+            .contact-form-heading {
+                font-size: 1.5rem;
+            }
+            .contact-form input, .contact-form textarea {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <h1>SmartSchool</h1>
+            </div>
+            <nav>
+                <span class="hamburger">☰</span>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#detailed-features">All Features</a></li>
+                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#support">Support</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Home Page (Main Landing Page) -->
+    <section id="home" class="hero">
+        <h1>Transform School Management</h1>
+        <p>Empower your school with SmartSchool’s intuitive, India-focused tools.</p>
+        <a href="#support" class="cta-button">Request Free Demo</a>
+    </section>
+    <section>
+        <h2>Why SmartSchool?</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <img src="https://cdn-icons-png.flaticon.com/512/3138/3138298.png" alt="Admin Icon">
+                <h3>Effortless Admin</h3>
+                <p>Automate attendance, fees, and more to save hours daily.</p>
+            </div>
+            <div class="feature-card">
+                <img src="https://cdn-icons-png.flaticon.com/512/893/893078.png" alt="Communication Icon">
+                <h3>Seamless Connectivity</h3>
+                <p>Engage parents via SMS, app, or email instantly.</p>
+            </div>
+            <div class="feature-card">
+                <img src="https://cdn-icons-png.flaticon.com/512/3308/3308468.png" alt="Data Icon">
+                <h3>Actionable Insights</h3>
+                <p>Monitor progress with real-time reports and analytics.</p>
+            </div>
+        </div>
+        <div class="infographic-section">
+            <div class="infographic-item">
+                <img src="https://cdn-icons-png.flaticon.com/512/2784/2784460.png" alt="Time Saving Icon">
+                <p>Save 10+ hours/week on admin tasks</p>
+            </div>
+            <div class="infographic-item">
+                <img src="https://cdn-icons-png.flaticon.com/512/681/681494.png" alt="Engagement Icon">
+                <p>90% parent engagement via SMS</p>
+            </div>
+            <div class="infographic-item">
+                <img src="https://cdn-icons-png.flaticon.com/512/2232/2232687.png" alt="Data Icon">
+                <p>Real-time student performance tracking</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials">
+        <h2>Trusted by Schools Across India</h2>
+        <div class="testimonial-slider">
+            <div class="testimonial-card active">
+                <img src="https://cdn-icons-png.flaticon.com/512/1828/1828640.png" alt="Star Icon">
+                <p>"SmartSchool has transformed our daily operations!"</p>
+                <p><strong>— Principal, Lotus School, Mumbai</strong></p>
+            </div>
+            <div class="testimonial-card">
+                <img src="https://cdn-icons-png.flaticon.com/512/1828/1828640.png" alt="Star Icon">
+                <p>"Parents love the instant SMS updates."</p>
+                <p><strong>— Teacher, Radiant Academy, Delhi</strong></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Detailed Features Page -->
+    <section id="detailed-features">
+        <h2>Explore All Features</h2>
+        <p>Discover SmartSchool’s comprehensive tools with intuitive visuals.</p>
+        <div class="tabs">
+            <div class="tab active" data-module="learn">Learn</div>
+            <div class="tab" data-module="timetable">Timetable</div>
+            <div class="tab" data-module="activities">Activities</div>
+            <div class="tab" data-module="individual-needs">Individual Needs</div>
+            <div class="tab" data-module="library">Library</div>
+            <div class="tab" data-module="people">People</div>
+            <div class="tab" data-module="assess">Assess</div>
+            <div class="tab" data-module="other">Other</div>
+            <div class="tab" data-module="admin">Admin</div>
+        </div>
+        <div class="module-section" id="learn">
+            <h3>Learn Module</h3>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header">Planner</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2099/2099085.png" alt="Planner Icon">
+                        <p>Plan lessons quickly with Smart Blocks, share multimedia, assign homework, and track attendance.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Departments</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3064/3064155.png" alt="Departments Icon">
+                        <p>Organize courses and share materials with stakeholders seamlessly.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Resources</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2232/2232687.png" alt="Resources Icon">
+                        <p>Manage and embed resources directly into lessons.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="module-section" id="timetable" style="display: none;">
+            <h3>Timetable Module</h3>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header">Timetable</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3659/3659897.png" alt="Timetable Icon">
+                        <p>View schedules, sync with calendars, and book rooms effortlessly.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="module-section" id="activities" style="display: none;">
+            <h3>Activities Module</h3>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header">Activities</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3082/3082383.png" alt="Activities Icon">
+                        <p>Manage event sign-ups and attendance with ease.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="module-section" id="individual-needs" style="display: none;">
+            <h3>Individual Needs Module</h3>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header">Individual Needs</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2073/2073577.png" alt="Individual Needs Icon">
+                        <p>Create tailored plans for students with special needs.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="module-section" id="library" style="display: none;">
+            <h3>Library Module</h3>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header">Library</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2232/2232688.png" alt="Library Icon">
+                        <p>Catalog and manage library items online efficiently.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="module-section" id="people" style="display: none;">
+            <h3>People Module</h3>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header">Students</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/201/201634.png" alt="Students Icon">
+                        <p>Access student profiles with key alerts and updates.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Application Form</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/942/942748.png" alt="Application Icon">
+                        <p>Streamline admissions with automated account creation.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Attendance</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/992/992651.png" alt="Attendance Icon">
+                        <p>Track and share attendance data in real-time.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Behaviour</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/1828/1828490.png" alt="Behaviour Icon">
+                        <p>Record behaviors with detailed summaries.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Data Updater</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2921/2921228.png" alt="Data Updater Icon">
+                        <p>Update user data with secure admin oversight.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Staff</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/201/201614.png" alt="Staff Icon">
+                        <p>Manage staff onboarding and directories seamlessly.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Form Groups</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/681/681494.png" alt="Form Groups Icon">
+                        <p>View groups with detailed student profiles.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="module-section" id="assess" style="display: none;">
+            <h3>Assess Module</h3>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header">Markbook</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2232/2232687.png" alt="Markbook Icon">
+                        <p>Track and grade academic data effortlessly.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Rubrics</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2099/2099085.png" alt="Rubrics Icon">
+                        <p>Create rubrics for consistent progress tracking.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Tracking</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2232/2232687.png" alt="Tracking Icon">
+                        <p>Visualize and export performance trends.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Formal Assessment</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/942/942748.png" alt="Assessment Icon">
+                        <p>Record assessments with accurate scores.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Crowd Assessment</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/681/681494.png" alt="Crowd Assessment Icon">
+                        <p>Enable peer feedback for collaborative learning.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="module-section" id="other" style="display: none;">
+            <h3>Other Modules</h3>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header">Messenger</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/893/893078.png" alt="Messenger Icon">
+                        <p>Send messages and bulletins to stakeholders.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Finance</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2331/2331966.png" alt="Finance Icon">
+                        <p>Manage fees and expenses with ease.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="module-section" id="admin" style="display: none;">
+            <h3>Admin Module</h3>
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header">School Admin</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3064/3064155.png" alt="School Admin Icon">
+                        <p>Configure school settings with ease.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">System Admin</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2921/2921228.png" alt="System Admin Icon">
+                        <p>Manage system updates securely.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">User Admin</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/201/201614.png" alt="User Admin Icon">
+                        <p>Oversee user accounts efficiently.</p>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <div class="accordion-header">Timetable Admin</div>
+                    <div class="accordion-content">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3659/3659897.png" alt="Timetable Admin Icon">
+                        <p>Input and manage schedule data.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Page -->
+    <section id="pricing">
+        <h2>Affordable Pricing Plans</h2>
+        <p>Choose a plan with a 30-day free trial tailored to your school’s needs.</p>
+        <table class="pricing-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Basic (₹10,000/yr)</th>
+                    <th class="popular">Standard (₹20,000/yr)</th>
+                    <th>Premium (₹50,000/yr)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Students</td>
+                    <td>200</td>
+                    <td>500</td>
+                    <td>Unlimited</td>
+                </tr>
+                <tr>
+                    <td>Core Features</td>
+                    <td><img src="https://cdn-icons-png.flaticon.com/512/992/992651.png" alt="Check Icon"></td>
+                    <td><img src="https://cdn-icons-png.flaticon.com/512/992/992651.png" alt="Check Icon"></td>
+                    <td><img src="https://cdn-icons-png.flaticon.com/512/992/992651.png" alt="Check Icon"></td>
+                </tr>
+                <tr>
+                    <td>SMS & Portal</td>
+                    <td><img src="https://cdn-icons-png.flaticon.com/512/1828/1828490.png" alt="Cross Icon"></td>
+                    <td><img src="https://cdn-icons-png.flaticon.com/512/992/992651.png" alt="Check Icon"></td>
+                    <td><img src="https://cdn-icons-png.flaticon.com/512/992/992651.png" alt="Check Icon"></td>
+                </tr>
+                <tr>
+                    <td>Analytics & App</td>
+                    <td><img src="https://cdn-icons-png.flaticon.com/512/1828/1828490.png" alt="Cross Icon"></td>
+                    <td><img src="https://cdn-icons-png.flaticon.com/512/1828/1828490.png" alt="Cross Icon"></td>
+                    <td><img src="https://cdn-icons-png.flaticon.com/512/992/992651.png" alt="Check Icon"></td>
+                </tr>
+                <tr>
+                    <td>Support</td>
+                    <td>Email</td>
+                    <td>Priority</td>
+                    <td>Dedicated</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td><a href="#support?plan=Basic&price=10000" class="cta-button">Choose</a></td>
+                    <td><a href="#support?plan=Standard&price=20000" class="cta-button">Choose</a></td>
+                    <td><a href="#support?plan=Premium&price=50000" class="cta-button">Choose</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Support Page -->
+    <section id="support">
+        <h2>Support & Contact</h2>
+        <p>We’re here to help! Chat with us or send a message.</p>
+        <div id="tawkto-chat"></div>
+        <script>
+            var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+            (function(){
+                var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
+                s1.async = true;
+                s1.src = 'https://embed.tawk.to/YOUR_TAWKTO_PROPERTY_ID/default';
+                s1.charset = 'UTF-8';
+                s1.setAttribute('crossorigin', '*');
+                s0.parentNode.insertBefore(s1, s0);
+            })();
+        </script>
+        <div class="contact-form accordion-item">
+            <h3 class="contact-form-heading">Get in Touch with Us</h3>
+            <div class="accordion-header" id="contact-form-header" role="button" aria-expanded="false" tabindex="0">Contact Us Form</div>
+            <div class="accordion-content">
+                <form id="contactForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST" aria-labelledby="contact-form-header">
+                    <div id="error-message" class="error-message" aria-live="polite"></div>
+                    <label for="name">Name*</label>
+                    <input type="text" id="name" name="name" placeholder="Your Name*" aria-required="true" required>
+                    <label for="mobile">Mobile*</label>
+                    <input type="tel" id="mobile" name="mobile" placeholder="Mobile* (10-digit)" pattern="[6-9][0-9]{9}" title="Enter a valid 10-digit Indian mobile number" aria-label="10-digit Indian mobile number" aria-required="true" required>
+                    <label for="email">Email*</label>
+                    <input type="email" id="email" name="email" placeholder="Enter Email*" aria-required="true" required>
+                    <label for="selected_plan">Selected Plan</label>
+                    <input type="text" id="selected_plan" name="selected_plan" readonly aria-label="Selected pricing plan">
+                    <label for="school_name">School Name</label>
+                    <input type="text" id="school_name" name="school_name" placeholder="School Name">
+                    <label for="address">Address</label>
+                    <textarea id="address" name="address" placeholder="Address" rows="3"></textarea>
+                    <label for="refer_by">Refer By</label>
+                    <input type="text" id="refer_by" name="refer_by" placeholder="Refer By">
+                    <label for="software_needs">What should you look for in management Software?</label>
+                    <textarea id="software_needs" name="software_needs" placeholder="What should you look for in management Software?" rows="4"></textarea>
+                    <button type="submit">Send Message</button>
+                </form>
+            </div>
+        </div>
+        <h3>Frequently Asked Questions</h3>
+        <div class="faq-item">
+            <h3>What is SmartSchool?</h3>
+            <p>Cloud-based software designed for Indian schools to automate tasks and connect stakeholders.</p>
+        </div>
+        <div class="faq-item">
+            <h3>How much does it cost?</h3>
+            <p>Plans start at ₹10,000/year. Visit our Pricing section for details.</p>
+        </div>
+        <div class="faq-item">
+            <h3>Is training included?</h3>
+            <p>Yes, we provide free onboarding and training for all plans.</p>
+        </div>
+    </section>
+
+    <!-- Floating WhatsApp Widget -->
+    <div class="whatsapp-cta collapsed" id="whatsappWidget">
+        <img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" alt="WhatsApp Icon" class="whatsapp-icon">
+        <div class="whatsapp-content">
+            <p>+91 98765 43210</p>
+            <p>support@smartschool.in</p>
+            <p>123 Education Lane, Mumbai, India</p>
+            <a href="https://wa.me/919876543210" target="_blank" class="chat-button">Chat Now</a>
+        </div>
+    </div>
+
+    <a href="#support" class="cta-button floating-cta">Request Demo</a>
+
+    <footer>
+        <div class="footer-content">
+            <div>
+                <h3>SmartSchool</h3>
+                <p>Empowering Indian schools with smart, affordable tools.</p>
+            </div>
+            <div>
+                <h3>Quick Links</h3>
+                <a href="#home">Home</a>
+                <a href="#detailed-features">All Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#support">Support</a>
+            </div>
+            <div>
+                <h3>Contact Us</h3>
+                <p>Email: <a href="mailto:support@smartschool.in">support@smartschool.in</a></p>
+                <p>Phone: +91 98765 43210</p>
+                <p>Address: 123 Education Lane, Mumbai, India</p>
+                <div class="social-icons">
+                    <a href="https://instagram.com/getedsoft" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/733/733579.png" alt="Instagram"></a>
+                    <a href="https://wa.me/919876543210" target="_blank"><img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" alt="WhatsApp"></a>
+                </div>
+            </div>
+            <div class="coupon-form">
+                <h3>Get Your Discount Coupon</h3>
+                <form id="couponForm">
+                    <input type="tel" name="mobile" placeholder="Your Mobile Number" pattern="[6-9][0-9]{9}" title="Enter a valid 10-digit Indian mobile number" required>
+                    <button type="submit">Generate Coupon</button>
+                </form>
+                <div id="couponResult" class="coupon-result"></div>
+            </div>
+        </div>
+    </footer>
+
+    <script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+    </script>
+    <script>
+        // Hamburger menu
+        document.querySelector('.hamburger').addEventListener('click', () => {
+            document.querySelector('nav ul').classList.toggle('active');
+        });
+
+        // Accordion functionality
+        document.querySelectorAll('.accordion-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const content = header.nextElementSibling;
+                const isActive = content.classList.contains('active');
+                content.classList.toggle('active');
+                header.classList.toggle('active');
+                header.setAttribute('aria-expanded', !isActive);
+            });
+            // Keyboard accessibility
+            header.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    header.click();
+                }
+            });
+        });
+
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.module-section').forEach(s => s.style.display = 'none');
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.module).style.display = 'block';
+            });
+        });
+
+        // Testimonial slider
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.testimonial-card');
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('active', i === index);
+            });
+        }
+        setInterval(() => {
+            currentSlide = (currentSlide + 1) % slides.length;
+            showSlide(currentSlide);
+        }, 5000);
+        showSlide(currentSlide);
+
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').split('?')[0];
+                document.querySelector(targetId).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // WhatsApp widget toggle
+        const whatsappWidget = document.getElementById('whatsappWidget');
+        const whatsappIcon = whatsappWidget.querySelector('.whatsapp-icon');
+        whatsappIcon.addEventListener('click', () => {
+            whatsappWidget.classList.toggle('collapsed');
+            whatsappWidget.classList.toggle('expanded');
+        });
+
+        // Function to escape CSV values
+        function escapeCSV(value) {
+            if (value == null) return '';
+            value = String(value);
+            if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+        }
+
+        // Function to generate and download enquiry.csv (append mode)
+        function generateEnquiryCSV(name, mobile, email, schoolName, address, referBy, softwareNeeds, selectedPlan) {
+            const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            const headers = ['Name', 'Mobile', 'Email', 'School Name', 'Address', 'Refer By', 'Software Needs', 'Selected Plan', 'Submission Date'];
+            const row = [
+                escapeCSV(name),
+                escapeCSV(mobile),
+                escapeCSV(email),
+                escapeCSV(schoolName),
+                escapeCSV(address),
+                escapeCSV(referBy),
+                escapeCSV(softwareNeeds),
+                escapeCSV(selectedPlan),
+                escapeCSV(date)
+            ].join(',');
+
+            // Check if enquiryCSV exists in localStorage
+            let csvContent = localStorage.getItem('enquiryCSV');
+            if (csvContent) {
+                // Append new row (skip headers)
+                csvContent += '\n' + row;
+            } else {
+                // Create new CSV with headers
+                csvContent = headers.join(',') + '\n' + row;
+            }
+
+            // Save back to localStorage
+            localStorage.setItem('enquiryCSV', csvContent);
+
+            // Trigger download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'enquiry.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Contact form submission with CSV generation
+        document.getElementById('contactForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const name = form.name.value;
+            const mobile = form.mobile.value;
+            const email = form.email.value;
+            const schoolName = form.school_name.value;
+            const address = form.address.value;
+            const referBy = form.refer_by.value;
+            const softwareNeeds = form.software_needs.value;
+            const selectedPlan = form.selected_plan.value;
+            const errorMessage = document.getElementById('error-message');
+
+            // Validate mobile number
+            const mobileRegex = /^[6-9][0-9]{9}$/;
+            if (!mobileRegex.test(mobile)) {
+                errorMessage.textContent = 'Please enter a valid 10-digit Indian mobile number.';
+                errorMessage.classList.add('active');
+                return;
+            }
+
+            // Validate email
+            if (!email || !email.includes('@')) {
+                errorMessage.textContent = 'Please enter a valid email address.';
+                errorMessage.classList.add('active');
+                return;
+            }
+
+            // Clear error message
+            errorMessage.textContent = '';
+            errorMessage.classList.remove('active');
+
+            // Generate CSV
+            generateEnquiryCSV(name, mobile, email, schoolName, address, referBy, softwareNeeds, selectedPlan);
+
+            // Submit to Formspree
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { 'Accept': 'application/json' }
+            }).then(response => {
+                if (response.ok) {
+                    alert('Message sent successfully!');
+                    form.reset();
+                } else {
+                    alert('Failed to send message. Please try again.');
+                }
+            }).catch(() => {
+                alert('An error occurred. Please try again.');
+            });
+        });
+
+        // Function to generate and download coupon.csv (append mode)
+        function generateCouponCSV(mobile, couponCode, discount) {
+            const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+            const headers = ['Mobile Number', 'Coupon Code', 'Discount Percentage', 'Date'];
+            const row = [
+                escapeCSV(mobile),
+                escapeCSV(couponCode),
+                escapeCSV(discount),
+                escapeCSV(date)
+            ].join(',');
+
+            // Check if couponCSV exists in localStorage
+            let csvContent = localStorage.getItem('couponCSV');
+            if (csvContent) {
+                // Append new row (skip headers)
+                csvContent += '\n' + row;
+            } else {
+                // Create new CSV with headers
+                csvContent = headers.join(',') + '\n' + row;
+            }
+
+            // Save back to localStorage
+            localStorage.setItem('couponCSV', csvContent);
+
+            // Trigger download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'coupon.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Coupon generation with consistent code for same mobile number and CSV generation
+        document.getElementById('couponForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const mobile = e.target.mobile.value;
+            const mobileRegex = /^[6-9][0-9]{9}$/;
+            const resultDiv = document.getElementById('couponResult');
+
+            if (!mobileRegex.test(mobile)) {
+                resultDiv.textContent = 'Please enter a valid 10-digit Indian mobile number.';
+                resultDiv.classList.add('active');
+                return;
+            }
+
+            // Hash mobile number to create a consistent seed
+            function hashMobile(mobile) {
+                let hash = 0;
+                for (let i = 0; i < mobile.length; i++) {
+                    hash = (hash * 31 + mobile.charCodeAt(i)) % 1000000;
+                }
+                return hash;
+            }
+
+            // Seeded random number generator
+            let seed = hashMobile(mobile);
+            function seedRandom() {
+                seed = (seed * 9301 + 49297) % 233280;
+                return seed / 233280;
+            }
+
+            // Generate coupon code
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let couponCode = 'SS2025-';
+            for (let i = 0; i < 4; i++) {
+                couponCode += chars.charAt(Math.floor(seedRandom() * chars.length));
+            }
+
+            // Generate random discount percentage between 8% and 20%
+            const discount = Math.floor(seedRandom() * 13) + 8; // Maps to [8, 20]
+
+            // Display result
+            resultDiv.innerHTML = `
+                <strong>Your Coupon: ${couponCode}</strong><br>
+                Enjoy ${discount}% off! Share this code with our sales team to avail the discount.
+            `;
+            resultDiv.classList.add('active');
+
+            // Generate CSV
+            generateCouponCSV(mobile, couponCode, discount);
+
+            e.target.reset();
+        });
+
+        // Pre-fill form with pricing plan from query parameters
+        window.addEventListener('load', () => {
+            const params = new URLSearchParams(window.location.search);
+            const plan = params.get('plan');
+            const price = params.get('price');
+            if (plan && price) {
+                const selectedPlanInput = document.getElementById('selected_plan');
+                selectedPlanInput.value = `${plan} (₹${price}/yr)`;
+                
+                // Expand the contact form
+                const contactFormHeader = document.getElementById('contact-form-header');
+                const contactFormContent = contactFormHeader.nextElementSibling;
+                const contactFormContainer = document.querySelector('.contact-form');
+                contactFormContent.classList.add('active');
+                contactFormHeader.classList.add('active');
+                contactFormHeader.setAttribute('aria-expanded', 'true');
+
+                // Apply pulse animation
+                contactFormContainer.style.animation = 'pulse-form 0.5s ease';
+
+                // Scroll to the contact form
+                contactFormHeader.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    </script>
+</body>
+</html>
